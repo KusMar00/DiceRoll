@@ -21,19 +21,49 @@ server.bind((host, port))
 server.listen()
 
 tls = context.wrap_socket(server, server_side=True)
-conn, address = tls.accept()
+connection, address = tls.accept()
 
-print("Connection from: " + str(address))
+print("Connection from: " + str(address) + " (Alice)")
 
 # Establish TSL is configured correctly
-clientCert = conn.getpeercert()
-print(f"Certificate verified: {clientCert != None}")
+clientCert = connection.getpeercert()
+if clientCert != None:
+	print("Alice's certificate verified")
+else:
+	print("Alice's certificate is not valid. Termintaing connection.")
+	connection.close()
 
-shake = conn.do_handshake()
+shake = connection.do_handshake()
+if shake == None:
+	print("TLS handshake successful")
 
-# Receive message from Alice
-message = conn.recv(1024).decode()
-print("Message from Alice: " + message)
+print("Starting dice roll simulation...\n\n")
+
+counter = 0
 
 while True:
+	counter += 1
 	
+	# Receive commitment from Alice
+	aliceCommit = connection.recv(1024).decode()
+
+	# Simulate dice roll
+	bobDice = Dice.roll_dice()
+
+	# Send dice roll to Alice
+	connection.send(str(bobDice).encode())
+
+	# Receive Alice's dice roll and bit-string
+	aliceDice, aliceBitString = connection.recv(1024).decode().split()
+
+	# Verify Alice's commitment
+	if aliceCommit == Dice.commit(aliceDice, aliceBitString):
+		# Calculate result
+		result = Dice.result(int(aliceDice), bobDice)
+		# Print result
+		print(f"Result of dice roll #{counter}: {result}")
+	else:
+		print("Alice is cheating. Terminating connection.")
+		break
+
+connection.close()
