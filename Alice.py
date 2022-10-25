@@ -3,33 +3,27 @@ import Dice
 import socket
 from ssl import SSLContext, PROTOCOL_TLS_CLIENT
 
-# Client to Bob
-hostname='bob'
+servername='bob'
 host = socket.gethostname()
 port = 5001
 
+# Create SSL context
 context = SSLContext(PROTOCOL_TLS_CLIENT)
-
 context.load_verify_locations('./certificates/bob.cert.pem')
 context.load_cert_chain('./certificates/alice.cert.pem', './certificates/alice.key.pem')
 
-client = socket.create_connection((host, port))
-tls = context.wrap_socket(client, server_hostname=hostname)
-
+# Connect to Bob
+connection = socket.create_connection((host, port))
+tls = context.wrap_socket(connection, server_hostname=servername, do_handshake_on_connect=True)
 print("Connected to: " + str(socket.getaddrinfo(host, port)[1][4]) + " (Bob)")
 
-# Establish TLS is configured correctly
+# Verify Bob's certificate
 serverCertificate = tls.getpeercert()
 if serverCertificate != None:
 	print(f"Bob's certificate verified")
 else:
 	print(f"Bob's certificate is not valid. Termintaing connection.")
-	client.close()
-
-
-shake = tls.do_handshake()
-if shake == None:
-	print("TLS handshake successful")
+	connection.close()
 
 print("Starting dice roll simulation...\n\n")
 
@@ -58,4 +52,4 @@ while True:
 	# Print result
 	print(f"Result of dice roll #{counter}: {result}")
 
-	time.sleep(1)
+	time.sleep(2)

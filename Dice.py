@@ -12,8 +12,8 @@ def roll_dice():
 
 # Calculate result of inputs from Alice and Bob
 def result(dice1, dice2):
-	return ((dice1 ^ dice2)%6) + 1
+	return ((dice1 ^ dice2)%6)+1
 
-# Random bit-string of length n
+# Random bit-string of length 256
 def bit_string():
 	return ''.join([str(random.randint(0,1)) for i in range(256)])

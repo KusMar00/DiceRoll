@@ -1,41 +1,34 @@
 import socket
-import time
 import Dice
 from ssl import CERT_REQUIRED, SSLContext, PROTOCOL_TLS_SERVER
 
-# Acts as server for Alice
 host = socket.gethostname()
 port = 5001
 
-# Set SSL Context as server. Verify mode is CERT_REQUIRED, which means client must also have cert.
+# Create SSL context
 context = SSLContext(PROTOCOL_TLS_SERVER)
 context.verify_mode = CERT_REQUIRED
-
-# Load Bob cert and key, and store location of Alice cert
 context.load_cert_chain('./certificates/bob.cert.pem', './certificates/bob.key.pem')
 context.load_verify_locations("./certificates/alice.cert.pem")
 
-server = socket.socket()
+# Create socket
+sock = socket.socket()
+sock.bind((host, port)) 
+sock.listen()
 
-server.bind((host, port)) 
-server.listen()
+tls = context.wrap_socket(sock, server_side=True, do_handshake_on_connect=True)
 
-tls = context.wrap_socket(server, server_side=True)
+# Accept connection from Alice
 connection, address = tls.accept()
-
 print("Connection from: " + str(address) + " (Alice)")
 
-# Establish TSL is configured correctly
+# Verify Alice's certificate
 clientCert = connection.getpeercert()
 if clientCert != None:
 	print("Alice's certificate verified")
 else:
 	print("Alice's certificate is not valid. Termintaing connection.")
 	connection.close()
-
-shake = connection.do_handshake()
-if shake == None:
-	print("TLS handshake successful")
 
 print("Starting dice roll simulation...\n\n")
 
